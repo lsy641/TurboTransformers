@@ -34,14 +34,29 @@ namespace kernels {
     output_tensor = tf.transpose(output_tensor, [0, 2, 1, 3])
     return output_tensor
  * **/
-extern void TransposeForScore(core::Tensor* output, const core::Tensor& input);
+extern void TransposeForScore(core::Tensor* output, const core::Tensor& input,
+                              const std::string name = "TransposeForScore");
+
+extern void AddBiasTransposeForScore(
+    const core::Tensor& input, const core::Tensor& bias, core::Tensor* output,
+    const std::string name = "AddBiasTransposeForScore");
 
 // input: (batch_size, seq_length, 3, head_num, *size_per_head)
 // bias: (3, head_num, size_per_head)
 // output: (3, batch_size, num_attention_heads, seq_length, size_per_head)
-extern void SplitAddBiasTransposeForScore(core::Tensor* output,
-                                          const core::Tensor& input_tensor,
-                                          const core::Tensor& bias_tensor);
+// TODO(jiaruifang) the output is a tensor contains a continous memory space,
+// which stores q_out, k_out, v_out. Because the lifetime of q_out, k_out and
+// v_out are different, we should seperate them into 3 memory space
+extern void SplitAddBiasTransposeForScore(
+    core::Tensor* output, const core::Tensor& input_tensor,
+    const core::Tensor& bias_tensor,
+    const std::string name = "SplitAddBiasTransposeForScore");
+
+// A API friendly to variable-length input memory allocations.
+extern void SplitAddBiasTransposeForScore(
+    const core::Tensor& input_tensor, const core::Tensor& bias_tensor,
+    core::Tensor& q_out, core::Tensor& k_out, core::Tensor& v_out,
+    const std::string name = "SplitAddBiasTransposeForScore");
 
 }  // namespace kernels
 }  // namespace layers

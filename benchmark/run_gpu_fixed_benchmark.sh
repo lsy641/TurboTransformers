@@ -13,21 +13,23 @@
 # See the AUTHORS file for names of contributors.
 
 set -e
+# onnxrt does not work well for albert
 FRAMEWORKS=("turbo-transformers" "torch")
 # pip install onnxruntime-gpu before benchmarking onnxrt
 # FRAMEWORKS=("onnxruntime")
 SEQ_LEN=(10 20 40 60 80 100 200 300 400 500)
 BATCH_SIZE=(1 20)
+
 N=150
-MODEL="bert-base-chinese"
+MODEL="bert"
 for batch_size in ${BATCH_SIZE[*]}
 do
   for seq_len in ${SEQ_LEN[*]}
   do
     for framework in ${FRAMEWORKS[*]}
     do
-      python gpu_benchmark.py ${MODEL} --seq_len=${seq_len} --batch_size=${batch_size}\
-          -n ${N} --framework=${framework}
+      python benchmark.py ${MODEL} --seq_len=${seq_len} --batch_size=${batch_size}\
+          -n ${N} --framework=${framework} --use_gpu
     done
   done
 done

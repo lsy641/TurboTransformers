@@ -158,11 +158,13 @@ struct BertModel::Impl {
     for (size_t i = 0; i < inputs.size();
          ++i, iptr += max_seq_len, mptr += max_seq_len) {
       auto &input = inputs[i];
+      // TODO(jiaruifang) Bert_Attention use mask value as 1 to indicate a valid
+      // position.
       std::copy(input.begin(), input.end(), iptr);
-      std::fill(mptr, mptr + input.size(), 0);
+      std::fill(mptr, mptr + input.size(), 1);
       if (input.size() != static_cast<size_t>(max_seq_len)) {
         std::fill(iptr + input.size(), iptr + max_seq_len, 0);
-        std::fill(mptr + input.size(), mptr + max_seq_len, 1);
+        std::fill(mptr + input.size(), mptr + max_seq_len, 0);
       }
     }
     if (device_type_ == DLDeviceType::kDLGPU) {
@@ -184,13 +186,13 @@ struct BertModel::Impl {
     if (poistion_ids.size() != 0) {
       TT_ENFORCE_EQ(
           poistion_ids.size(), static_cast<size_t>(batch_size),
-          "Position ids should have the same batch size as ibout ids");
+          "Position ids should have the same batch size as input ids");
       PadTensor(poistion_ids, batch_size, max_seq_len, static_cast<int64_t>(0),
                 device_type_, &positionIds);
     }
     if (segment_ids.size() != 0) {
       TT_ENFORCE_EQ(segment_ids.size(), static_cast<size_t>(batch_size),
-                    "Segment ids should have the same batch size as ibout ids");
+                    "Segment ids should have the same batch size as input ids");
       PadTensor(segment_ids, batch_size, max_seq_len, static_cast<int64_t>(0),
                 device_type_, &seqType);
     }
@@ -209,18 +211,18 @@ struct BertModel::Impl {
       layer(hidden, extendedAttentionMask, &attOut, &intermediateOut, &hidden);
     }
 
-    core::Tensor poolingOutput(nullptr);
-    layers::SequencePool(static_cast<layers::types::PoolType>(pooling))(
-        hidden, &poolingOutput);
     std::vector<float> vec;
     if (use_pooler) {
       core::Tensor output(nullptr);
+      core::Tensor poolingOutput(nullptr);
+      layers::SequencePool(static_cast<layers::types::PoolType>(pooling))(
+          hidden, &poolingOutput);
       (*pooler_)(poolingOutput, &output);
       vec.resize(output.numel());
       core::Copy(output, vec);
     } else {
-      vec.resize(poolingOutput.numel());
-      core::Copy(poolingOutput, vec);
+      vec.resize(hidden.numel());
+      core::Copy(hidden, vec);
     }
 
     return vec;

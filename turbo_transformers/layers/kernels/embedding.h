@@ -12,37 +12,18 @@
 // See the AUTHORS file for names of contributors.
 
 #pragma once
-#include <memory.h>
-
-#include <map>
-#include <memory>
-
-#include "macros.h"
+#include "turbo_transformers/core/tensor.h"
 
 namespace turbo_transformers {
-namespace core {
+namespace layers {
+namespace kernels {
 
-class CUDAAllocator {
- public:
-  ~CUDAAllocator();
+template <bool Add>
+void LookupEmbedding(core::Tensor *out_tensor,
+                     const core::Tensor &embedding_table,
+                     const core::Tensor &ids_tensor,
+                     const std::string name = "LookupEmbedding");
 
-  static CUDAAllocator &GetInstance() {
-    static CUDAAllocator instance;
-    return instance;
-  }
-
-  void *allocate(size_t size);
-
-  void free(void *memory);
-
- private:
-  CUDAAllocator();
-
-  struct AllocatorImpl;
-  std::unique_ptr<AllocatorImpl> allocator_;
-
-  DISABLE_COPY_AND_ASSIGN(CUDAAllocator);
-};
-
-}  // namespace core
+}  // namespace kernels
+}  // namespace layers
 }  // namespace turbo_transformers
